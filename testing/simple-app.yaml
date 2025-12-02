@@ -1,0 +1,52 @@
+---
+# Simple Test Application
+# This is a basic nginx deployment that exposes metrics for Prometheus
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-nginx
+  namespace: sample-workloads
+  labels:
+    app: simple-nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-nginx
+  template:
+    metadata:
+      labels:
+        app: simple-nginx
+    spec:
+      containers:
+      # Just a simple nginx container
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+---
+# Service to expose the nginx pods
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-nginx
+  namespace: sample-workloads
+  labels:
+    app: simple-nginx
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  selector:
+    app: simple-nginx

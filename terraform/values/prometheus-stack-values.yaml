@@ -1,0 +1,96 @@
+## Prometheus Configuration
+prometheus:
+  prometheusSpec:
+    retention: ${prometheus_retention}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: ${prometheus_storage_size}
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    # Allow discovery of all ServiceMonitors and PodMonitors
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+## Grafana Configuration
+grafana:
+  enabled: true
+  adminPassword: ${grafana_admin_password}
+  
+  persistence:
+    enabled: true
+    size: ${grafana_storage_size}
+    accessModes:
+      - ReadWriteOnce
+  
+  service:
+    type: %{ if enable_grafana_loadbalancer }LoadBalancer%{ else }ClusterIP%{ endif }
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Pre-configured dashboards
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  
+  # Note: Prometheus datasource is automatically configured by the Helm chart
+  # No need to add it manually - it's already included!
+
+## Alertmanager Configuration
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+## Node Exporter
+nodeExporter:
+  enabled: true
+
+## Kube State Metrics
+kubeStateMetrics:
+  enabled: true
+
+## Prometheus Operator
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

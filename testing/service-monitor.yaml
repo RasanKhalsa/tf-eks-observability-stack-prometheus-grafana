@@ -1,0 +1,16 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx-sample-monitor
+  namespace: sample-workloads
+  labels:
+    app: nginx-sample
+spec:
+  selector:
+    matchLabels:
+      app: nginx-sample
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics

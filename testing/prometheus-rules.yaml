@@ -1,0 +1,74 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sample-app-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+  - name: sample-app
+    interval: 30s
+    rules:
+    # High CPU usage alert
+    - alert: HighCPUUsage
+      expr: |
+        sum(rate(container_cpu_usage_seconds_total{namespace="sample-workloads"}[5m])) by (pod) > 0.8
+      for: 2m
+      labels:
+        severity: warning
+        component: sample-app
+      annotations:
+        summary: "High CPU usage detected"
+        description: "Pod {{ $labels.pod }} is using more than 80% CPU for 2 minutes"
+    
+    # High memory usage alert
+    - alert: HighMemoryUsage
+      expr: |
+        sum(container_memory_working_set_bytes{namespace="sample-workloads"}) by (pod) / 
+        sum(container_spec_memory_limit_bytes{namespace="sample-workloads"}) by (pod) > 0.8
+      for: 2m
+      labels:
+        severity: warning
+        component: sample-app
+      annotations:
+        summary: "High memory usage detected"
+        description: "Pod {{ $labels.pod }} is using more than 80% of memory limit"
+    
+    # Pod restart alert
+    - alert: PodRestartingFrequently
+      expr: |
+        rate(kube_pod_container_status_restarts_total{namespace="sample-workloads"}[15m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+        component: sample-app
+      annotations:
+        summary: "Pod restarting frequently"
+        description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+    
+    # Pod not ready alert
+    - alert: PodNotReady
+      expr: |
+        kube_pod_status_phase{namespace="sample-workloads", phase!="Running"} == 1
+      for: 5m
+      labels:
+        severity: warning
+        component: sample-app
+      annotations:
+        summary: "Pod not in Running state"
+        description: "Pod {{ $labels.pod }} is in {{ $labels.phase }} state"
+    
+    # Nginx connection alert
+    - alert: NginxHighConnections
+      expr: |
+        nginx_connections_active{namespace="sample-workloads"} > 100
+      for: 5m
+      labels:
+        severity: warning
+        component: nginx
+      annotations:
+        summary: "High number of Nginx connections"
+        description: "Nginx instance {{ $labels.pod }} has {{ $value }} active connections"
